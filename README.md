@@ -42,8 +42,8 @@ Gemini keys. No key or credential is included in this repository.
 ### 1. Clone the repository and install dependencies
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/YOUR-REPO.git
-cd YOUR-REPO
+git clone https://github.com/jonpecruz/pantryai.git
+cd pantryai
 npm install
 ```
 
