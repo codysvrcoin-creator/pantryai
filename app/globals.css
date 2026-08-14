@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 33% 98%;
+    --foreground: 150 15% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 150 15% 12%;
+    --primary: 152 47% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 28 100% 65%;
+    --secondary-foreground: 150 15% 12%;
+    --muted: 40 20% 94%;
+    --muted-foreground: 150 8% 45%;
+    --accent: 28 100% 94%;
+    --accent-foreground: 24 70% 35%;
+    --destructive: 350 60% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 15% 89%;
+    --input: 40 15% 89%;
+    --radius: 1rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html {
+    height: 100%;
+    overscroll-behavior-y: none;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    height: 100%;
+    overscroll-behavior-y: none;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .glass {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

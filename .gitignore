@@ -1,0 +1,27 @@
+# dependencies
+node_modules
+
+# Next.js
+.next
+out
+
+# environment variables (NEVER commit real keys)
+.env
+.env.local
+.env.*.local
+
+# Vercel (contains your personal project/org ID)
+.vercel
+
+# TypeScript
+next-env.d.ts
+*.tsbuildinfo
+
+# System
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
