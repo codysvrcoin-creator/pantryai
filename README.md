@@ -5,7 +5,7 @@ budget → pantry → AI weekly menu → shopping list → cook → consume. Bui
 **strictly personal** use (a single person/household, no login, no social
 features, no payments).
 
-## ✨ Features
+## Features
 
 - **Local-first**: works offline (Zustand + `localStorage`); syncs with
   Supabase in the background whenever there's internet.
@@ -25,7 +25,7 @@ features, no payments).
   used from your pantry.
 - **Installable PWA** on iOS: full screen, no Safari bar.
 
-## 🧱 Tech stack
+## Tech stack
 
 - [Next.js 14](https://nextjs.org/) (App Router) + TypeScript
 - [Supabase](https://supabase.com/) (Postgres) as the sync backend
@@ -34,7 +34,7 @@ features, no payments).
 - Tailwind CSS + shadcn/ui + Framer Motion
 - Zustand with local persistence
 
-## 🚀 How to self-host your own copy
+## How to self-host your own copy
 
 This app is meant for each person to deploy with **their own** Supabase and
 Gemini keys. No key or credential is included in this repository.
@@ -127,7 +127,7 @@ redeploy with `vercel --prod` for them to take effect.
 3. Tap **"Add to Home Screen"**.
 4. Open the app from the new icon: it will open full screen.
 
-## 📁 Project structure
+## Project structure
 
 ```
 app/                    Next.js routes (pages + /api endpoints)
@@ -139,7 +139,7 @@ supabase/               SQL migrations (run in order)
 public/                 Manifest, service worker, icons
 ```
 
-## 🔒 Privacy
+## Privacy
 
 All your data (budget, pantry, plans, prices) lives first on your own
 device and syncs only with **your own** Supabase project. No data is
