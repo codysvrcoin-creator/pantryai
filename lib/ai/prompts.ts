@@ -32,7 +32,8 @@ const MEAL_JSON_SHAPE = `{
   "prepMinutes": number,
   "cookMinutes": number,
   "estimatedCost": number (cost estimate for this whole meal, in the given currency),
-  "isLeftover": boolean (true if this meal is NOT freshly cooked that day — it's a reheated portion from an earlier meal-prep batch, part of the user's "days off from cooking"; false if it's cooked fresh that day)
+  "isLeftover": boolean (true if this meal is NOT freshly cooked that day — it's a reheated portion from an earlier meal-prep batch, part of the user's "days off from cooking"; false if it's cooked fresh that day),
+  "vibe": string (ONE short, catchy 1-3 word mood/vibe tag for this specific dish, in title case, the kind of label a food app would put on a card — pick whatever best fits this dish, e.g. "Fakeaway", "Gut Friendly", "Post-Workout", "Comfort Food", "Fresh & Light", "Quick Fix", "Family Favorite", "Spicy Kick", "Meal Prep Hero", "Protein Punch", "Budget Win", "Cozy Night In" — vary it across the week's meals, don't reuse the same vibe for every dish)
 }`;
 
 function formatPantryForPrompt(pantryItems: PantryItem[]): string {

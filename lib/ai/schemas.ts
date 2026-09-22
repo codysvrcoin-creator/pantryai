@@ -37,6 +37,7 @@ export const plannedMealSchema = z.object({
   cookMinutes: z.number().nonnegative(),
   estimatedCost: z.number().nonnegative(),
   isLeftover: z.boolean().default(false),
+  vibe: z.string().min(1).default("Balanced"),
 });
 
 export const plannedDaySchema = z.object({

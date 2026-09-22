@@ -1,7 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Flame, Clock, Euro, Repeat2 } from "lucide-react";
+import { Clock, Users, Euro, Repeat2 } from "lucide-react";
+import { useAppStore } from "@/lib/store";
+import { getVibeStyle, getMealThumbnail } from "@/lib/vibeStyle";
 import type { PlannedMeal } from "@/lib/types";
 
 const MEAL_TYPE_LABEL: Record<string, string> = {
@@ -11,13 +13,6 @@ const MEAL_TYPE_LABEL: Record<string, string> = {
   snack: "Snack",
 };
 
-const MEAL_TYPE_EMOJI: Record<string, string> = {
-  breakfast: "🌅",
-  lunch: "🍽️",
-  dinner: "🌙",
-  snack: "🍎",
-};
-
 export default function MealCard({
   meal,
   onTap,
@@ -25,44 +20,60 @@ export default function MealCard({
   meal: PlannedMeal;
   onTap: () => void;
 }) {
+  const people = useAppStore((s) => s.people);
+  const vibeStyle = getVibeStyle(meal.vibe);
+  const { emoji, gradient } = getMealThumbnail(meal.recipeName, meal.mealType);
+
   return (
     <motion.button
       layout
       whileTap={{ scale: 0.97 }}
       onClick={onTap}
-      className="flex w-full flex-col gap-2 rounded-3xl border border-border bg-card p-4 text-left"
+      className="flex w-full items-center gap-3 rounded-3xl border border-border bg-card p-3 text-left"
     >
-      <div className="flex items-center justify-between">
-        <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-          {MEAL_TYPE_EMOJI[meal.mealType]} {MEAL_TYPE_LABEL[meal.mealType]}
-        </span>
-        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Euro size={12} />
-          {meal.estimatedCost.toFixed(2)}
-        </span>
+      <div
+        className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl text-3xl"
+        style={{ backgroundImage: gradient }}
+      >
+        {emoji}
+        {meal.isLeftover && (
+          <span className="absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-card text-primary shadow-sm ring-2 ring-card">
+            <Repeat2 size={13} />
+          </span>
+        )}
       </div>
 
-      <p className="text-base font-semibold leading-tight text-foreground">
-        {meal.recipeName}
-      </p>
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {MEAL_TYPE_LABEL[meal.mealType]}
+        </span>
 
-      {meal.isLeftover && (
-        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
-          <Repeat2 size={11} />
-          Meal-prepped · just reheat
-        </span>
-      )}
+        <p className="truncate text-[15px] font-semibold leading-tight text-foreground">
+          {meal.recipeName}
+        </p>
 
-      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <Flame size={12} className="text-citrus-500" />
-          {meal.calories} kcal
+        <span
+          className="inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium"
+          style={{ backgroundColor: vibeStyle.bg, color: vibeStyle.text }}
+        >
+          {meal.isLeftover ? "Meal-prepped · reheat" : meal.vibe}
         </span>
-        <span className="flex items-center gap-1">
-          <Clock size={12} />
-          {meal.prepMinutes + meal.cookMinutes} min
-        </span>
-        <span>P {meal.proteinG}g · C {meal.carbsG}g · F {meal.fatG}g</span>
+
+        <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Clock size={11} />
+            {meal.prepMinutes + meal.cookMinutes}m
+          </span>
+          <span className="flex items-center gap-1">
+            <Users size={11} />
+            {people}
+          </span>
+          <span className="flex items-center gap-1">
+            <Euro size={11} />
+            {meal.estimatedCost.toFixed(2)}
+          </span>
+          <span>{meal.calories} kcal</span>
+        </div>
       </div>
     </motion.button>
   );

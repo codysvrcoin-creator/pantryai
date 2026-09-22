@@ -142,6 +142,8 @@ export interface PlannedMeal {
   estimatedCost: number;
   /** True if this is a reheated meal-prep batch from an earlier cook day (part of a "day off" from cooking). */
   isLeftover: boolean;
+  /** Short catchy vibe/mood tag for the card, e.g. "Fakeaway", "Gut Friendly", "Post-Workout". */
+  vibe: string;
 }
 
 export interface PlannedDay {

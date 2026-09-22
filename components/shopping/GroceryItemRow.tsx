@@ -30,6 +30,60 @@ export default function GroceryItemRow({ item }: { item: GroceryItem }) {
       exit={{ opacity: 0, height: 0 }}
       className="flex items-center gap-3 rounded-3xl border border-border bg-card p-3"
     >
+      <div className="min-w-0 flex-1">
+        <p
+          className={`truncate text-sm font-semibold ${
+            item.isChecked ? "text-muted-foreground line-through" : "text-foreground"
+          }`}
+        >
+          {CATEGORY_EMOJI[item.category] ?? "📦"} {item.name}
+          {!item.haveEnough && (
+            <span className="ml-1 font-normal text-muted-foreground">
+              ({item.requiredQuantity}
+              {item.requiredUnit} needed)
+            </span>
+          )}
+        </p>
+        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+          {item.alreadyHaveQuantity > 0 &&
+            `Already have: ${item.alreadyHaveQuantity}${item.alreadyHaveUnit} · `}
+          {item.usedInMeals > 0 && `Used in ${item.usedInMeals} meal${item.usedInMeals > 1 ? "s" : ""}`}
+        </p>
+        <div className="mt-1 flex gap-2">
+          {!item.haveEnough && item.source === "plan" && (
+            <button
+              onClick={() => setGroceryHaveEnough(item.id, true)}
+              className="text-[10px] text-primary underline"
+            >
+              already have it
+            </button>
+          )}
+          <button onClick={() => removeGroceryItem(item.id)} className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <Trash2 size={11} />
+            remove
+          </button>
+        </div>
+      </div>
+
+      <div className="flex shrink-0 flex-col items-end gap-0.5">
+        {item.haveEnough ? (
+          <span className="text-[10px] font-medium text-primary">Have enough</span>
+        ) : (
+          <>
+            <span className="text-sm font-semibold tabular-nums text-foreground">
+              {item.purchaseLabel}
+            </span>
+            <span className="text-[10px] tabular-nums text-muted-foreground">
+              {item.estimatedPrice.toFixed(2)}€
+              <span className={item.priceIsEstimated ? "" : "text-primary"}>
+                {" "}
+                {item.priceIsEstimated ? "· est." : "· last price"}
+              </span>
+            </span>
+          </>
+        )}
+      </div>
+
       <motion.button
         whileTap={{ scale: 0.85 }}
         onClick={() => toggleGroceryChecked(item.id)}
@@ -42,55 +96,6 @@ export default function GroceryItemRow({ item }: { item: GroceryItem }) {
       >
         <Check size={16} strokeWidth={3} />
       </motion.button>
-
-      <div className="min-w-0 flex-1">
-        <p
-          className={`truncate text-sm font-medium ${
-            item.isChecked ? "text-muted-foreground line-through" : "text-foreground"
-          }`}
-        >
-          {CATEGORY_EMOJI[item.category] ?? "📦"} {item.name}
-        </p>
-        <p className="text-[11px] text-muted-foreground">
-          Needed: {item.requiredQuantity}{item.requiredUnit}
-          {item.alreadyHaveQuantity > 0 &&
-            ` · Already have: ${item.alreadyHaveQuantity}${item.alreadyHaveUnit}`}
-          {!item.haveEnough && ` · Buy: ${item.purchaseLabel}`}
-          {item.usedInMeals > 0 && ` · Used in ${item.usedInMeals} meal${item.usedInMeals > 1 ? "s" : ""}`}
-        </p>
-      </div>
-
-      <div className="flex shrink-0 flex-col items-end gap-1">
-        {item.haveEnough ? (
-          <span className="text-[10px] font-medium text-primary">Already have enough</span>
-        ) : (
-          <>
-            <span className="text-sm font-semibold tabular-nums text-foreground">
-              {item.estimatedPrice.toFixed(2)}€
-            </span>
-            <span
-              className={`text-[9px] font-medium ${
-                item.priceIsEstimated ? "text-muted-foreground" : "text-primary"
-              }`}
-            >
-              {item.priceIsEstimated ? "Estimated" : "Last price"}
-            </span>
-          </>
-        )}
-        <div className="flex gap-1.5 mt-0.5">
-          {!item.haveEnough && item.source === "plan" && (
-            <button
-              onClick={() => setGroceryHaveEnough(item.id, true)}
-              className="text-[10px] text-primary underline"
-            >
-              already have it
-            </button>
-          )}
-          <button onClick={() => removeGroceryItem(item.id)} aria-label="Remove">
-            <Trash2 size={14} className="text-muted-foreground" />
-          </button>
-        </div>
-      </div>
     </motion.div>
   );
 }

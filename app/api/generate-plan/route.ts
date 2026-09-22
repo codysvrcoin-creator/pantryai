@@ -123,6 +123,7 @@ export async function POST(req: NextRequest) {
               cookMinutes: meal.cookMinutes,
               estimatedCost: meal.estimatedCost,
               isLeftover: meal.isLeftover,
+              vibe: meal.vibe,
             };
           }),
         };

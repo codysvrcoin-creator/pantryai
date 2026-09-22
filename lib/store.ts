@@ -52,6 +52,12 @@ interface AppState {
   setPeople: (people: number) => void;
   setWeeklyBudget: (budget: number) => void;
 
+  // ---------- Profile (local-only, cosmetic personalization) ----------
+  chefName: string;
+  preferredStore: string;
+  setChefName: (name: string) => void;
+  setPreferredStore: (store: string) => void;
+
   // ---------- Nutrition goals ----------
   calories: number;
   proteinG: number;
@@ -192,6 +198,12 @@ export const useAppStore = create<AppState>()(
             .neq("id", "");
         });
       },
+
+      // ---------- Profile (local-only, cosmetic personalization) ----------
+      chefName: "",
+      preferredStore: "",
+      setChefName: (name) => set({ chefName: name.slice(0, 40) }),
+      setPreferredStore: (store) => set({ preferredStore: store.slice(0, 40) }),
 
       // ---------- Nutrition goals (MealFit's default: vegan, high-protein, calorie-conscious) ----------
       calories: 1900,
@@ -773,6 +785,8 @@ export const useAppStore = create<AppState>()(
         people: state.people,
         weeklyBudget: state.weeklyBudget,
         currency: state.currency,
+        chefName: state.chefName,
+        preferredStore: state.preferredStore,
         cookDaysPerWeek: state.cookDaysPerWeek,
         calories: state.calories,
         proteinG: state.proteinG,

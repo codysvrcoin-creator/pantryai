@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, AlertTriangle, Wand2 } from "lucide-react";
+import { Plus, AlertTriangle, Wand2, Copy, Share2, Store, Check } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import GroceryItemRow from "@/components/shopping/GroceryItemRow";
 import AddGroceryItemDrawer from "@/components/shopping/AddGroceryItemDrawer";
@@ -14,11 +14,44 @@ export default function ShoppingPage() {
   const weeklyBudget = useAppStore((s) => s.weeklyBudget);
   const currency = useAppStore((s) => s.currency);
   const weekPlan = useAppStore((s) => s.weekPlan);
+  const preferredStore = useAppStore((s) => s.preferredStore);
 
   const [addOpen, setAddOpen] = useState(false);
   const [optimizeOpen, setOptimizeOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const symbol = currency === "EUR" ? "€" : currency;
+
+  const checkedCount = groceryItems.filter((i) => i.isChecked || i.haveEnough).length;
+
+  const listAsText = useMemo(() => {
+    const lines = groceryItems.map(
+      (i) => `${i.isChecked || i.haveEnough ? "[x]" : "[ ]"} ${i.name} — ${i.purchaseLabel}`
+    );
+    return `Grocery list${preferredStore ? ` (${preferredStore})` : ""}\n${lines.join("\n")}`;
+  }, [groceryItems, preferredStore]);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(listAsText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard unavailable — silently ignore, the button just won't confirm.
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Grocery list", text: listAsText });
+        return;
+      } catch {
+        // User cancelled or share unsupported — fall back to copy.
+      }
+    }
+    handleCopy();
+  };
 
   const { estimatedCost, remaining, isOverBudget } = useMemo(() => {
     const cost = groceryItems
@@ -46,7 +79,12 @@ export default function ShoppingPage() {
     <div className="flex flex-col gap-4">
       <div className="sticky top-0 z-20 glass border-b border-border px-4 pb-3 pt-safe">
         <div className="flex items-center justify-between pt-3">
-          <h1 className="text-2xl font-semibold text-foreground">Grocery List</h1>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              This week
+            </p>
+            <h1 className="text-2xl font-semibold text-foreground">Grocery list</h1>
+          </div>
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setAddOpen(true)}
@@ -55,6 +93,35 @@ export default function ShoppingPage() {
           >
             <Plus size={22} />
           </motion.button>
+        </div>
+
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          {preferredStore && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-[11px] font-medium text-accent-foreground">
+              <Store size={12} />
+              {preferredStore}
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-[11px] font-medium text-foreground">
+            {checkedCount}/{groceryItems.length} done
+          </span>
+        </div>
+
+        <div className="mt-2.5 grid grid-cols-2 gap-2">
+          <button
+            onClick={handleCopy}
+            className="flex items-center justify-center gap-1.5 rounded-2xl border border-border bg-card py-2.5 text-xs font-semibold text-foreground tap-target"
+          >
+            {copied ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
+            {copied ? "Copied!" : "Copy list"}
+          </button>
+          <button
+            onClick={handleShare}
+            className="flex items-center justify-center gap-1.5 rounded-2xl border border-border bg-card py-2.5 text-xs font-semibold text-foreground tap-target"
+          >
+            <Share2 size={14} />
+            Share
+          </button>
         </div>
 
         <div className="mt-3 grid grid-cols-3 gap-2">
@@ -113,7 +180,7 @@ export default function ShoppingPage() {
 
         {grouped.map(([category, items]) => (
           <div key={category}>
-            <p className="mb-2 text-xs font-medium capitalize text-muted-foreground">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               {category} · {items.length}
             </p>
             <div className="flex flex-col gap-2">

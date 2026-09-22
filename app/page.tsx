@@ -1,14 +1,17 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { Users, Wallet, Flame, Beef, Refrigerator, ShoppingCart, ChefHat } from "lucide-react";
+import { Users, Flame, Beef, Refrigerator, ChefHat, Store, ChevronRight, ShoppingBag } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { formatMoney } from "@/lib/format";
+import { getTimeOfDayGreeting } from "@/lib/greeting";
 import BudgetSelector from "@/components/BudgetSelector";
 import PeopleSelector from "@/components/PeopleSelector";
 import NutritionGoals from "@/components/NutritionGoals";
 import CookDaysSelector from "@/components/CookDaysSelector";
+import ProfileSelector from "@/components/ProfileSelector";
 
 function StatCard({
   icon: Icon,
@@ -51,8 +54,10 @@ export default function DashboardPage() {
   const cookDaysPerWeek = useAppStore((s) => s.cookDaysPerWeek);
   const pantryItems = useAppStore((s) => s.pantryItems);
   const groceryItems = useAppStore((s) => s.groceryItems);
+  const chefName = useAppStore((s) => s.chefName);
+  const preferredStore = useAppStore((s) => s.preferredStore);
 
-  const { activeCount, toBuyCount, estimatedCost } = useMemo(() => {
+  const { activeCount, toBuyCount, estimatedCost, checkedCount, totalItems } = useMemo(() => {
     const active = pantryItems.filter((i) => !i.is_empty);
     const pending = groceryItems.filter((i) => !i.isChecked && !i.haveEnough);
     const estimated = pending.reduce((sum, i) => sum + i.estimatedPrice, 0);
@@ -60,23 +65,88 @@ export default function DashboardPage() {
       activeCount: active.length,
       toBuyCount: pending.length,
       estimatedCost: +estimated.toFixed(2),
+      checkedCount: groceryItems.filter((i) => i.isChecked || i.haveEnough).length,
+      totalItems: groceryItems.length,
     };
   }, [pantryItems, groceryItems]);
 
-  const remaining = +(weeklyBudget - estimatedCost).toFixed(2);
+  const costRatio = weeklyBudget > 0 ? Math.min(1, estimatedCost / weeklyBudget) : 0;
+  const isOverBudget = estimatedCost > weeklyBudget;
+  const groceryRatio = totalItems > 0 ? checkedCount / totalItems : 0;
 
   return (
-    <div className="flex flex-col gap-6 px-4 pt-4">
+    <div className="flex flex-col gap-5 px-4 pt-4">
       <header>
-        <p className="text-sm text-muted-foreground">Hi 👋</p>
-        <h1 className="text-2xl font-semibold text-foreground">MealFit</h1>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {getTimeOfDayGreeting()}
+        </p>
+        <h1 className="text-2xl font-semibold text-foreground">
+          {chefName ? `${chefName}!` : "MealFit"}
+        </h1>
         <p className="mt-1 text-xs text-muted-foreground">
           A system, not a diet — vegan, high-protein, calorie-conscious meals, meal-prepped so you
           get real days off from cooking.
         </p>
+        {preferredStore && (
+          <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-[11px] font-medium text-accent-foreground">
+            <Store size={12} />
+            planned for {preferredStore}
+          </span>
+        )}
       </header>
 
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-3xl border border-border bg-card p-4">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Est. cost
+          </p>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
+            {formatMoney(estimatedCost, currency)}
+            <span className="text-xs font-normal text-muted-foreground">
+              {" "}
+              / {formatMoney(weeklyBudget, currency)}
+            </span>
+          </p>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className={`h-full rounded-full ${isOverBudget ? "bg-destructive" : "bg-primary"}`}
+              style={{ width: `${costRatio * 100}%` }}
+            />
+          </div>
+        </div>
+
+        <Link href="/shopping">
+          <motion.div
+            whileTap={{ scale: 0.97 }}
+            className="flex h-full flex-col justify-between rounded-3xl bg-accent p-4"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-accent-foreground/70">
+                Tap to view
+              </p>
+              <ChevronRight size={14} className="text-accent-foreground/70" />
+            </div>
+            <div>
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-accent-foreground">
+                <ShoppingBag size={14} />
+                Grocery list
+              </p>
+              <p className="mt-0.5 text-[11px] text-accent-foreground/80">
+                {checkedCount}/{totalItems} items bought
+              </p>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-accent-foreground/15">
+                <div
+                  className="h-full rounded-full bg-accent-foreground/60"
+                  style={{ width: `${groceryRatio * 100}%` }}
+                />
+              </div>
+            </div>
+          </motion.div>
+        </Link>
+      </div>
+
       <section className="flex flex-col gap-3">
+        <ProfileSelector />
         <BudgetSelector />
         <PeopleSelector />
         <CookDaysSelector />
@@ -87,12 +157,6 @@ export default function DashboardPage() {
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">At a glance</h2>
         <div className="grid grid-cols-2 gap-3">
           <StatCard icon={Users} label="People" value={String(people)} accent="#2E7D5B" />
-          <StatCard
-            icon={Wallet}
-            label="Weekly budget"
-            value={formatMoney(weeklyBudget, currency)}
-            accent="#FF8A3D"
-          />
           <StatCard icon={Flame} label="Calorie target" value={`${calories} kcal`} accent="#C85C7A" />
           <StatCard icon={Beef} label="Protein target" value={`${proteinG}g`} accent="#4E9C74" />
           <StatCard
@@ -109,25 +173,7 @@ export default function DashboardPage() {
             sub="active items"
             accent="#2E7D5B"
           />
-          <StatCard
-            icon={ShoppingCart}
-            label="To buy"
-            value={String(toBuyCount)}
-            sub={`Estimated cost ${formatMoney(estimatedCost, currency)}`}
-            accent="#FF8A3D"
-          />
         </div>
-      </section>
-
-      <section className="rounded-3xl bg-card border border-border p-4">
-        <p className="text-xs text-muted-foreground">Budget remaining this week</p>
-        <p
-          className={`mt-1 text-3xl font-semibold tabular-nums ${
-            remaining < 0 ? "text-destructive" : "text-foreground"
-          }`}
-        >
-          {formatMoney(remaining, currency)}
-        </p>
       </section>
     </div>
   );

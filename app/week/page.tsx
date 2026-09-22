@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Loader2 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
@@ -31,27 +31,32 @@ export default function WeekPage() {
   const [userPrompt, setUserPrompt] = useState("");
   const [selected, setSelected] = useState<{ date: string; meal: PlannedMeal } | null>(null);
 
+  const dayRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
   const weekStartDate = useMemo(() => {
     const d = getWeekStart(new Date());
     return d.toISOString().slice(0, 10);
   }, []);
 
   const weekDates = useMemo(() => getWeekDates(weekStartDate), [weekStartDate]);
-  const [activeDate, setActiveDate] = useState(() => todayISO());
+  const today = todayISO();
+  const [jumpDate, setJumpDate] = useState(() => todayISO());
 
-  const activeDay = weekPlan?.days.find((d) => d.date === activeDate);
-
-  const actual = useMemo(() => {
-    const meals = activeDay?.meals ?? [];
+  const todayPlan = weekPlan?.days.find((d) => d.date === today);
+  const todayActual = useMemo(() => {
+    const meals = todayPlan?.meals ?? [];
     return {
       calories: meals.reduce((sum, m) => sum + m.calories, 0),
       proteinG: +meals.reduce((sum, m) => sum + m.proteinG, 0).toFixed(1),
-      carbsG: +meals.reduce((sum, m) => sum + m.carbsG, 0).toFixed(1),
-      fatG: +meals.reduce((sum, m) => sum + m.fatG, 0).toFixed(1),
     };
-  }, [activeDay]);
-  const hasMeals = (activeDay?.meals.length ?? 0) > 0;
-  const caloriesOnTarget = isWithinTolerance(actual.calories, calories);
+  }, [todayPlan]);
+  const hasTodayMeals = (todayPlan?.meals.length ?? 0) > 0;
+  const caloriesOnTarget = isWithinTolerance(todayActual.calories, calories);
+
+  const scrollToDay = (date: string) => {
+    setJumpDate(date);
+    dayRefs.current[date]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const handleGenerate = async () => {
     setPlanGenerating(true);
@@ -162,13 +167,40 @@ export default function WeekPage() {
             </p>
           )}
 
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          {hasTodayMeals && (
+            <div className="rounded-3xl border border-border bg-card p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Today's target vs. actual
+                </p>
+                <span
+                  className={`text-xs font-semibold tabular-nums ${
+                    caloriesOnTarget ? "text-primary" : "text-citrus-600"
+                  }`}
+                >
+                  ~{todayActual.calories} / {calories} kcal
+                </span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className={`h-full rounded-full ${caloriesOnTarget ? "bg-primary" : "bg-citrus-500"}`}
+                  style={{ width: `${Math.min(100, (todayActual.calories / Math.max(1, calories)) * 100)}%` }}
+                />
+              </div>
+              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                P {todayActual.proteinG}g of {proteinG}g target
+              </p>
+            </div>
+          )}
+
+          <div className="sticky top-0 z-10 -mx-4 flex gap-2 overflow-x-auto no-scrollbar bg-background px-4 py-1">
             {weekDates.map((date) => {
-              const active = date === activeDate;
+              const active = date === jumpDate;
+              const isToday = date === today;
               return (
                 <button
                   key={date}
-                  onClick={() => setActiveDate(date)}
+                  onClick={() => scrollToDay(date)}
                   className="relative shrink-0 rounded-2xl px-3.5 py-2 tap-target"
                 >
                   {active && (
@@ -180,7 +212,7 @@ export default function WeekPage() {
                   )}
                   <span
                     className={`relative z-10 text-sm font-medium ${
-                      active ? "text-primary-foreground" : "text-muted-foreground"
+                      active ? "text-primary-foreground" : isToday ? "text-primary" : "text-muted-foreground"
                     }`}
                   >
                     {formatDayShort(date)}
@@ -190,57 +222,36 @@ export default function WeekPage() {
             })}
           </div>
 
-          <p className="text-xs text-muted-foreground">{formatDayLong(activeDate)}</p>
-
-          {hasMeals && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-3xl border border-border bg-card p-4">
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Target
-                </p>
-                <p className="text-xl font-semibold tabular-nums text-foreground">
-                  {calories} <span className="text-xs font-normal text-muted-foreground">kcal</span>
-                </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  P {proteinG}g · C {carbsG}g · F {fatG}g
-                </p>
-              </div>
-              <div className="rounded-3xl border border-border bg-card p-4">
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Actual (today)
-                </p>
-                <p
-                  className={`text-xl font-semibold tabular-nums ${
-                    caloriesOnTarget ? "text-foreground" : "text-citrus-600"
-                  }`}
-                >
-                  ~{actual.calories} <span className="text-xs font-normal text-muted-foreground">kcal</span>
-                </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  P {actual.proteinG}g · C {actual.carbsG}g · F {actual.fatG}g
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-3 pb-6">
-            <AnimatePresence mode="popLayout">
-              {(activeDay?.meals ?? []).map((meal) => (
-                <MealCard
-                  key={meal.id}
-                  meal={meal}
-                  onTap={() => setSelected({ date: activeDate, meal })}
-                />
-              ))}
-            </AnimatePresence>
-            {(!activeDay || activeDay.meals.length === 0) && (
-              <div className="flex flex-col items-center justify-center gap-1 rounded-3xl border border-dashed border-border py-14 text-center">
-                <p className="text-sm font-medium text-foreground">No meals this day</p>
-                <p className="px-8 text-xs text-muted-foreground">
-                  The generated plan didn't include meals for this date.
-                </p>
-              </div>
-            )}
+          <div className="flex flex-col gap-6 pb-6">
+            {weekDates.map((date) => {
+              const day = weekPlan.days.find((d) => d.date === date);
+              const meals = day?.meals ?? [];
+              return (
+                <div key={date} ref={(el) => { dayRefs.current[date] = el; }} className="scroll-mt-16">
+                  <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {formatDayLong(date)}
+                    {date === today && <span className="ml-1.5 text-primary">· Today</span>}
+                  </p>
+                  {meals.length > 0 ? (
+                    <div className="flex flex-col gap-2.5">
+                      <AnimatePresence mode="popLayout">
+                        {meals.map((meal) => (
+                          <MealCard
+                            key={meal.id}
+                            meal={meal}
+                            onTap={() => setSelected({ date, meal })}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  ) : (
+                    <div className="rounded-3xl border border-dashed border-border py-8 text-center">
+                      <p className="text-xs text-muted-foreground">No meals this day</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </>
       )}
