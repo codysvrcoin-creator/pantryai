@@ -102,6 +102,8 @@ export function buildWeekPlanPrompt(params: {
   weekStartDate: string;
   daysToPlan: string[]; // ISO dates, one per day of the week
   cookDaysPerWeek: number;
+  /** The exact dates (subset of daysToPlan) the user wants to actively cook on; the rest must be off/leftover days. */
+  cookDayDates: string[];
   savedRecipes: {
     name: string;
     tags: string[];
@@ -112,12 +114,12 @@ export function buildWeekPlanPrompt(params: {
     ingredients: { name: string; quantity: number; unit: string }[];
   }[];
 }) {
-  const offDays = Math.max(0, params.daysToPlan.length - params.cookDaysPerWeek);
+  const offDayDates = params.daysToPlan.filter((d) => !params.cookDayDates.includes(d));
 
   const systemPrompt = `${BASE_SYSTEM_PROMPT}
 
 You must generate a weekly meal plan (lunch and dinner for each day, unless the user asks otherwise) optimizing in this priority order:
-1. MEAL-PREP SYSTEM (core feature, not optional): the user wants to actively cook on only ${params.cookDaysPerWeek} of the ${params.daysToPlan.length} days in this plan, and have real days OFF from cooking on the other ${offDays}. To achieve this: on "cook days", cook larger batches of 1-2 recipes (scaled up in the ingredients, e.g. double or triple the base quantity) that reheat well, and reuse that same batch as the meal on one or more later "off days" (mark those later occurrences with "isLeftover": true and keep prepMinutes/cookMinutes near 0 for them, since it's just reheating). Spread the off days across the week rather than clustering all of them back to back, unless the user's request says otherwise.
+1. MEAL-PREP SYSTEM (core feature, not optional): the user has chosen EXACTLY these dates as their cook days: ${params.cookDayDates.join(", ") || "(none specified)"}. Every other date in this week — ${offDayDates.join(", ") || "(none)"} — MUST be a real day off from cooking. To achieve this: on a cook day, cook larger batches of 1-2 recipes (scaled up in the ingredients, e.g. double or triple the base quantity) that reheat well, and reuse that same batch as the meal on one or more of the specific off-day dates listed above (mark those occurrences with "isLeftover": true and keep prepMinutes/cookMinutes near 0 for them, since it's just reheating). Never assign a freshly-cooked (non-leftover) meal to one of the off-day dates.
 2. REUSE SAVED RECIPES: the user has saved recipes below (often imported from social media). Prefer slotting these in — as-is or scaled for the diner count — over inventing brand-new ones, especially for cook days, since they're proven dishes the user already wants to eat. You may still invent additional recipes to fill remaining slots and keep variety.
 3. Use pantry items that expire soon first.
 4. Reuse the same purchased ingredients across several recipes during the week (e.g. if a big batch of tofu is bought, use it split across 2-3 different meals instead of buying a different protein per recipe).
@@ -140,7 +142,8 @@ Strict JSON output format:
 - Diners: ${params.people}
 - Weekly budget: ${params.weeklyBudget} ${params.currency}
 - Approximate daily nutrition target (per person): ${params.calories} kcal, ${params.proteinG}g protein, ${params.carbsG}g carbs, ${params.fatG}g fat
-- Cook days this week: ${params.cookDaysPerWeek} (the remaining ${offDays} day(s) must be cooking-free thanks to meal-prepped leftovers)
+- Cook days this week (exact dates): ${params.cookDayDates.join(", ") || "(none specified)"}
+- Off/leftover days this week (exact dates, must be cooking-free): ${offDayDates.join(", ") || "(none)"}
 
 SAVED RECIPES (the user's own collection, often imported from social media — reuse these first when they fit)
 ${formatSavedRecipesForPrompt(params.savedRecipes)}

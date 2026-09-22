@@ -3,15 +3,20 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Users, Flame, Beef, Refrigerator, ChefHat, Store, ChevronRight, ShoppingBag } from "lucide-react";
+import {
+  Users,
+  Flame,
+  Beef,
+  Refrigerator,
+  ChefHat,
+  Store,
+  ChevronRight,
+  ShoppingBag,
+  Settings,
+} from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { formatMoney } from "@/lib/format";
 import { getTimeOfDayGreeting } from "@/lib/greeting";
-import BudgetSelector from "@/components/BudgetSelector";
-import PeopleSelector from "@/components/PeopleSelector";
-import NutritionGoals from "@/components/NutritionGoals";
-import CookDaysSelector from "@/components/CookDaysSelector";
-import ProfileSelector from "@/components/ProfileSelector";
 
 function StatCard({
   icon: Icon,
@@ -57,13 +62,12 @@ export default function DashboardPage() {
   const chefName = useAppStore((s) => s.chefName);
   const preferredStore = useAppStore((s) => s.preferredStore);
 
-  const { activeCount, toBuyCount, estimatedCost, checkedCount, totalItems } = useMemo(() => {
+  const { activeCount, estimatedCost, checkedCount, totalItems } = useMemo(() => {
     const active = pantryItems.filter((i) => !i.is_empty);
     const pending = groceryItems.filter((i) => !i.isChecked && !i.haveEnough);
     const estimated = pending.reduce((sum, i) => sum + i.estimatedPrice, 0);
     return {
       activeCount: active.length,
-      toBuyCount: pending.length,
       estimatedCost: +estimated.toFixed(2),
       checkedCount: groceryItems.filter((i) => i.isChecked || i.haveEnough).length,
       totalItems: groceryItems.length,
@@ -76,23 +80,32 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5 px-4 pt-4">
-      <header>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {getTimeOfDayGreeting()}
-        </p>
-        <h1 className="text-2xl font-semibold text-foreground">
-          {chefName ? `${chefName}!` : "MealFit"}
-        </h1>
-        <p className="mt-1 text-xs text-muted-foreground">
-          A system, not a diet — vegan, high-protein, calorie-conscious meals, meal-prepped so you
-          get real days off from cooking.
-        </p>
-        {preferredStore && (
-          <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-[11px] font-medium text-accent-foreground">
-            <Store size={12} />
-            planned for {preferredStore}
-          </span>
-        )}
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {getTimeOfDayGreeting()}
+          </p>
+          <h1 className="text-2xl font-semibold text-foreground">
+            {chefName ? `${chefName}!` : "MealFit"}
+          </h1>
+          <p className="mt-1 text-xs text-muted-foreground">
+            A system, not a diet — vegan, high-protein, calorie-conscious meals, meal-prepped so
+            you get real days off from cooking.
+          </p>
+          {preferredStore && (
+            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-[11px] font-medium text-accent-foreground">
+              <Store size={12} />
+              planned for {preferredStore}
+            </span>
+          )}
+        </div>
+        <Link
+          href="/settings"
+          className="tap-target flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card border border-border"
+          aria-label="Settings"
+        >
+          <Settings size={18} className="text-muted-foreground" />
+        </Link>
       </header>
 
       <div className="grid grid-cols-2 gap-3">
@@ -145,16 +158,13 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <section className="flex flex-col gap-3">
-        <ProfileSelector />
-        <BudgetSelector />
-        <PeopleSelector />
-        <CookDaysSelector />
-        <NutritionGoals />
-      </section>
-
       <section>
-        <h2 className="mb-3 text-sm font-medium text-muted-foreground">At a glance</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-medium text-muted-foreground">At a glance</h2>
+          <Link href="/preferences" className="text-xs font-medium text-primary">
+            Edit preferences
+          </Link>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <StatCard icon={Users} label="People" value={String(people)} accent="#2E7D5B" />
           <StatCard icon={Flame} label="Calorie target" value={`${calories} kcal`} accent="#C85C7A" />

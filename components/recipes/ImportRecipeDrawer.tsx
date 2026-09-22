@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, Leaf, Check } from "lucide-react";
+import { Sparkles, Loader2, Leaf, Check, Link2 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { isLikelyUrl } from "@/lib/recipeLink";
+import RecipeLinkEmbed from "@/components/recipes/RecipeLinkEmbed";
 
 interface ImportedRecipe {
   name: string;
@@ -130,25 +132,42 @@ export default function ImportRecipeDrawer({
         <div className="flex flex-col gap-4 px-5 pb-6 pt-2">
           {!preview && (
             <>
-              <p className="text-xs text-muted-foreground">
-                Paste a caption, ingredient list, or the text of a recipe you saved from
-                Instagram, TikTok, Pinterest, or anywhere else. MealFit will turn it into a
-                structured recipe and adapt it to be vegan, high-protein, and calorie-conscious if
-                it isn't already.
-              </p>
-              <textarea
-                value={rawText}
-                onChange={(e) => setRawText(e.target.value)}
-                placeholder="Paste the recipe text here..."
-                rows={6}
-                className="w-full resize-none rounded-2xl bg-muted px-4 py-3 text-sm outline-none"
-              />
-              <input
-                value={sourceUrl}
-                onChange={(e) => setSourceUrl(e.target.value)}
-                placeholder="Source link (optional)"
-                className="w-full rounded-2xl bg-muted px-4 py-3 text-sm outline-none"
-              />
+              <div>
+                <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  <Link2 size={14} />
+                  Recipe link
+                </label>
+                <input
+                  value={sourceUrl}
+                  onChange={(e) => setSourceUrl(e.target.value)}
+                  placeholder="Paste an Instagram Reel, TikTok, or YouTube link"
+                  className="w-full rounded-2xl bg-muted px-4 py-3 text-sm outline-none"
+                />
+                {isLikelyUrl(sourceUrl) && (
+                  <div className="mt-2">
+                    <RecipeLinkEmbed url={sourceUrl.trim()} />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-foreground">
+                  Caption or recipe text
+                </p>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  We can't watch the video for you (yet) — paste the caption, or type out the
+                  ingredients and steps, so the AI can structure it. MealFit will adapt it to be
+                  vegan, high-protein, and calorie-conscious if it isn't already.
+                </p>
+                <textarea
+                  value={rawText}
+                  onChange={(e) => setRawText(e.target.value)}
+                  placeholder="Paste the caption or recipe text here..."
+                  rows={5}
+                  className="w-full resize-none rounded-2xl bg-muted px-4 py-3 text-sm outline-none"
+                />
+              </div>
+
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={handleImport}
@@ -182,6 +201,7 @@ export default function ImportRecipeDrawer({
 
           {preview && (
             <>
+              {preview.sourceUrl && <RecipeLinkEmbed url={preview.sourceUrl} />}
               <div className="rounded-3xl border border-border bg-muted/40 p-4">
                 <p className="text-base font-semibold text-foreground">{preview.name}</p>
                 <div className="mt-1 flex flex-wrap gap-1.5">

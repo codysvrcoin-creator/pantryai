@@ -31,6 +31,7 @@ const requestSchema = z.object({
     })
   ),
   cookDaysPerWeek: z.number().min(1).max(7).default(4),
+  cookDayDates: z.array(z.string()).default([]),
   savedRecipes: z
     .array(
       z.object({
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
     weekStartDate: body.weekStartDate,
     daysToPlan,
     cookDaysPerWeek: body.cookDaysPerWeek,
+    cookDayDates: body.cookDayDates.length > 0 ? body.cookDayDates : daysToPlan.slice(0, body.cookDaysPerWeek),
     savedRecipes: body.savedRecipes,
   });
 

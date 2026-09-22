@@ -51,6 +51,7 @@ interface AppState {
   currency: string;
   setPeople: (people: number) => void;
   setWeeklyBudget: (budget: number) => void;
+  setCurrency: (currency: string) => void;
 
   // ---------- Profile (local-only, cosmetic personalization) ----------
   chefName: string;
@@ -72,10 +73,14 @@ interface AppState {
 
   // ---------- Meal-prep system: cook days vs. days off ----------
   cookDaysPerWeek: number;
+  /** Which weekdays ("Mon".."Sun") the user actually wants to cook on; the rest are meal-prepped days off. */
+  cookDays: string[];
   setCookDaysPerWeek: (days: number) => void;
+  toggleCookDay: (day: string) => void;
 
   // ---------- Saved / imported recipes ----------
   savedRecipes: Recipe[];
+  resetSavedRecipes: () => void;
   addSavedRecipe: (recipe: {
     name: string;
     servings_base: number;
@@ -198,6 +203,12 @@ export const useAppStore = create<AppState>()(
             .neq("id", "");
         });
       },
+      setCurrency: (currency) => {
+        set({ currency });
+        trySync(async () => {
+          await supabase.from("preferences").update({ currency }).neq("id", "");
+        });
+      },
 
       // ---------- Profile (local-only, cosmetic personalization) ----------
       chefName: "",
@@ -233,6 +244,7 @@ export const useAppStore = create<AppState>()(
 
       // ---------- Meal-prep system: cook days vs. days off ----------
       cookDaysPerWeek: 4,
+      cookDays: ["Wed", "Thu", "Fri", "Sat"],
       setCookDaysPerWeek: (days) => {
         const clamped = Math.max(1, Math.min(7, Math.round(days)));
         set({ cookDaysPerWeek: clamped });
@@ -240,6 +252,19 @@ export const useAppStore = create<AppState>()(
           await supabase
             .from("preferences")
             .update({ cook_days_per_week: clamped })
+            .neq("id", "");
+        });
+      },
+      toggleCookDay: (day) => {
+        const { cookDays } = get();
+        const isSelected = cookDays.includes(day);
+        if (isSelected && cookDays.length <= 1) return; // always keep at least 1 cook day
+        const nextDays = isSelected ? cookDays.filter((d) => d !== day) : [...cookDays, day];
+        set({ cookDays: nextDays, cookDaysPerWeek: nextDays.length });
+        trySync(async () => {
+          await supabase
+            .from("preferences")
+            .update({ cook_days_per_week: nextDays.length })
             .neq("id", "");
         });
       },
@@ -270,6 +295,13 @@ export const useAppStore = create<AppState>()(
           savedRecipes: state.savedRecipes.filter((r) => r.id !== id),
         }));
         trySync(() => deleteSavedRecipeRemote(id));
+      },
+      resetSavedRecipes: () => {
+        const ids = get().savedRecipes.map((r) => r.id);
+        set({ savedRecipes: [] });
+        trySync(async () => {
+          for (const id of ids) await deleteSavedRecipeRemote(id);
+        });
       },
 
       // ---------- Pantry ----------
@@ -788,6 +820,7 @@ export const useAppStore = create<AppState>()(
         chefName: state.chefName,
         preferredStore: state.preferredStore,
         cookDaysPerWeek: state.cookDaysPerWeek,
+        cookDays: state.cookDays,
         calories: state.calories,
         proteinG: state.proteinG,
         carbsG: state.carbsG,

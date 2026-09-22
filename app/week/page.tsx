@@ -22,6 +22,7 @@ export default function WeekPage() {
   const fatG = useAppStore((s) => s.fatG);
   const pantryItems = useAppStore((s) => s.pantryItems);
   const cookDaysPerWeek = useAppStore((s) => s.cookDaysPerWeek);
+  const cookDays = useAppStore((s) => s.cookDays);
   const savedRecipes = useAppStore((s) => s.savedRecipes);
   const isGeneratingPlan = useAppStore((s) => s.isGeneratingPlan);
   const setPlanGenerating = useAppStore((s) => s.setPlanGenerating);
@@ -84,6 +85,7 @@ export default function WeekPage() {
             expiration_date: p.expiration_date,
           })),
           cookDaysPerWeek,
+          cookDayDates: weekDates.filter((d) => cookDays.includes(formatDayShort(d))),
           savedRecipes: savedRecipes.map((r) => ({
             name: r.name,
             tags: r.tags,

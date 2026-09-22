@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Clock, ChevronDown, Trash2, Leaf, Link as LinkIcon } from "lucide-react";
+import { Flame, Clock, ChevronDown, Trash2, Leaf } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import type { Recipe } from "@/lib/types";
+import RecipeLinkEmbed from "@/components/recipes/RecipeLinkEmbed";
 
 export default function RecipeCard({ recipe }: { recipe: Recipe }) {
   const removeSavedRecipe = useAppStore((s) => s.removeSavedRecipe);
@@ -62,6 +63,8 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
             className="overflow-hidden"
           >
             <div className="flex flex-col gap-3 border-t border-border pt-3">
+              {recipe.source_url && <RecipeLinkEmbed url={recipe.source_url} />}
+
               {recipe.instructions && (
                 <p className="text-sm text-muted-foreground">{recipe.instructions}</p>
               )}
@@ -98,20 +101,7 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-1">
-                {recipe.source_url ? (
-                  <a
-                    href={recipe.source_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1 text-xs text-primary"
-                  >
-                    <LinkIcon size={11} />
-                    Original source
-                  </a>
-                ) : (
-                  <span />
-                )}
+              <div className="flex items-center justify-end pt-1">
                 <button
                   onClick={() => removeSavedRecipe(recipe.id)}
                   className="flex items-center gap-1 text-xs text-destructive tap-target"
