@@ -62,7 +62,7 @@ export default function BudgetSelector() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -8, opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="block text-3xl font-semibold tabular-nums text-foreground"
+            className="block font-heading text-3xl font-bold tabular-nums text-foreground"
           >
             {formatMoney(weeklyBudget, currency)}
           </motion.span>

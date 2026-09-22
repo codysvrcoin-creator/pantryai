@@ -43,7 +43,7 @@ function StatCard({
       >
         <Icon size={18} className="text-white" />
       </div>
-      <p className="text-xl font-semibold tabular-nums text-foreground">{value}</p>
+      <p className="font-heading text-xl font-bold tabular-nums text-foreground">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
       {sub && <p className="mt-0.5 text-[11px] text-muted-foreground/80">{sub}</p>}
     </motion.div>
@@ -113,7 +113,7 @@ export default function DashboardPage() {
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Est. cost
           </p>
-          <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
+          <p className="mt-1 font-heading text-lg font-bold tabular-nums text-foreground">
             {formatMoney(estimatedCost, currency)}
             <span className="text-xs font-normal text-muted-foreground">
               {" "}
@@ -131,25 +131,25 @@ export default function DashboardPage() {
         <Link href="/shopping">
           <motion.div
             whileTap={{ scale: 0.97 }}
-            className="flex h-full flex-col justify-between rounded-3xl bg-accent p-4"
+            className="flex h-full flex-col justify-between rounded-3xl bg-[#DCEAFB] p-4"
           >
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-accent-foreground/70">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-[#2C5C99]/70">
                 Tap to view
               </p>
-              <ChevronRight size={14} className="text-accent-foreground/70" />
+              <ChevronRight size={14} className="text-[#2C5C99]/70" />
             </div>
             <div>
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-accent-foreground">
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-[#2C5C99]">
                 <ShoppingBag size={14} />
                 Grocery list
               </p>
-              <p className="mt-0.5 text-[11px] text-accent-foreground/80">
+              <p className="mt-0.5 text-[11px] text-[#2C5C99]/80">
                 {checkedCount}/{totalItems} items bought
               </p>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-accent-foreground/15">
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#2C5C99]/15">
                 <div
-                  className="h-full rounded-full bg-accent-foreground/60"
+                  className="h-full rounded-full bg-[#2C5C99]/60"
                   style={{ width: `${groceryRatio * 100}%` }}
                 />
               </div>

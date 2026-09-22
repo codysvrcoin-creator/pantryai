@@ -26,7 +26,7 @@ export default function PreferencesPage() {
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Your plan
           </p>
-          <h1 className="text-2xl font-semibold text-foreground">Preferences</h1>
+          <h1 className="text-3xl font-bold lowercase text-foreground">Preferences</h1>
         </div>
       </header>
 

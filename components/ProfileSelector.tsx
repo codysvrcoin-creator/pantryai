@@ -39,7 +39,7 @@ export default function ProfileSelector() {
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          <p className="text-lg font-semibold text-foreground">
+          <p className="font-heading text-xl font-bold text-foreground">
             Hi, {chefName || "Chef"}
           </p>
           <button

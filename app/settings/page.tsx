@@ -36,7 +36,7 @@ export default function SettingsPage() {
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Your account
           </p>
-          <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
+          <h1 className="text-3xl font-bold lowercase text-foreground">Settings</h1>
         </div>
       </header>
 

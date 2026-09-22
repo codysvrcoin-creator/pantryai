@@ -54,6 +54,11 @@ const config: Config = {
         berry: {
           500: "#C85C7A",
         },
+        gold: {
+          400: "#F2C94C",
+          500: "#E8B93C",
+          600: "#C99A22",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -72,6 +77,7 @@ const config: Config = {
           "system-ui",
           "sans-serif",
         ],
+        heading: ["'Baloo 2'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
       },
       spacing: {
         "safe-b": "env(safe-area-inset-bottom)",

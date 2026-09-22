@@ -95,7 +95,7 @@ export default function NutritionGoals() {
           )}
         </div>
         <div className="mt-1 flex items-baseline gap-2">
-          <span className="text-2xl font-semibold tabular-nums">{calories}</span>
+          <span className="font-heading text-2xl font-bold tabular-nums">{calories}</span>
           <span className="text-sm text-muted-foreground">kcal</span>
         </div>
         <div className="mt-2 flex gap-3 text-xs text-muted-foreground">

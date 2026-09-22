@@ -48,7 +48,7 @@ export default function MealCard({
           {MEAL_TYPE_LABEL[meal.mealType]}
         </span>
 
-        <p className="truncate text-[15px] font-semibold leading-tight text-foreground">
+        <p className="font-heading truncate text-[16px] font-bold leading-tight text-foreground">
           {meal.recipeName}
         </p>
 
