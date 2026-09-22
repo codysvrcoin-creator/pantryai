@@ -1,7 +1,7 @@
 {
-  "name": "PantryAI - Food Assistant",
-  "short_name": "PantryAI",
-  "description": "Budget, pantry, weekly menu, grocery list, and cooking, all in one place.",
+  "name": "MealFit - Vegan Performance Meals",
+  "short_name": "MealFit",
+  "description": "Vegan, high-protein, meal-prepped weekly plans and grocery lists built from your own saved recipes.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

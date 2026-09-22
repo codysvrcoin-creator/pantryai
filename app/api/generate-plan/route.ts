@@ -30,6 +30,22 @@ const requestSchema = z.object({
       expiration_date: z.string().nullable(),
     })
   ),
+  cookDaysPerWeek: z.number().min(1).max(7).default(4),
+  savedRecipes: z
+    .array(
+      z.object({
+        name: z.string(),
+        tags: z.array(z.string()).default([]),
+        prepMinutes: z.number().default(0),
+        cookMinutes: z.number().default(0),
+        caloriesPerServing: z.number().nullable().default(null),
+        proteinPerServing: z.number().nullable().default(null),
+        ingredients: z
+          .array(z.object({ name: z.string(), quantity: z.number(), unit: z.string() }))
+          .default([]),
+      })
+    )
+    .default([]),
 });
 
 export async function POST(req: NextRequest) {
@@ -58,6 +74,8 @@ export async function POST(req: NextRequest) {
     pantryItems: body.pantryItems as any,
     weekStartDate: body.weekStartDate,
     daysToPlan,
+    cookDaysPerWeek: body.cookDaysPerWeek,
+    savedRecipes: body.savedRecipes,
   });
 
   try {
@@ -104,6 +122,7 @@ export async function POST(req: NextRequest) {
               prepMinutes: meal.prepMinutes,
               cookMinutes: meal.cookMinutes,
               estimatedCost: meal.estimatedCost,
+              isLeftover: meal.isLeftover,
             };
           }),
         };

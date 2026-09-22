@@ -35,6 +35,8 @@ export interface Preferences {
   people: number;
   weekly_budget: number;
   currency: string;
+  /** How many days per week the user actively cooks; the rest are meal-prepped days off. */
+  cook_days_per_week: number;
 }
 
 export interface RecipeIngredient {
@@ -61,6 +63,15 @@ export interface Recipe {
   fat_per_serving: number | null;
   estimated_cost: number | null;
   ingredients?: RecipeIngredient[];
+  /** "import" = saved from a social media / pasted recipe; "manual" = created directly. */
+  source: "manual" | "import";
+  source_url: string | null;
+  /** Full steps and utensils, kept client-side for display (not modeled as separate DB columns). */
+  steps: { text: string; timerMinutes: number | null }[];
+  utensils: string[];
+  was_adapted: boolean;
+  adaptation_note: string | null;
+  created_at: string;
 }
 
 export interface GroceryListItem {
@@ -129,6 +140,8 @@ export interface PlannedMeal {
   prepMinutes: number;
   cookMinutes: number;
   estimatedCost: number;
+  /** True if this is a reheated meal-prep batch from an earlier cook day (part of a "day off" from cooking). */
+  isLeftover: boolean;
 }
 
 export interface PlannedDay {

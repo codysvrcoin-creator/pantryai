@@ -36,6 +36,7 @@ export const plannedMealSchema = z.object({
   prepMinutes: z.number().nonnegative(),
   cookMinutes: z.number().nonnegative(),
   estimatedCost: z.number().nonnegative(),
+  isLeftover: z.boolean().default(false),
 });
 
 export const plannedDaySchema = z.object({
@@ -105,6 +106,23 @@ export const receiptScanResponseSchema = z.object({
 
 export type ReceiptItemAI = z.infer<typeof receiptItemResponseSchema>;
 export type ReceiptScanResponse = z.infer<typeof receiptScanResponseSchema>;
+
+export const recipeImportResponseSchema = z.object({
+  name: z.string().min(1),
+  servingsBase: z.number().positive().default(2),
+  tags: z.array(z.string()).default([]),
+  instructions: z.string().default(""),
+  utensils: z.array(z.string()).default([]),
+  steps: z.array(plannedStepSchema).min(1),
+  ingredients: z.array(plannedIngredientSchema).min(1),
+  prepMinutes: z.number().nonnegative().default(10),
+  cookMinutes: z.number().nonnegative().default(15),
+  estimatedCost: z.number().nonnegative().default(0),
+  wasAdapted: z.boolean().default(false),
+  adaptationNote: z.string().nullable().default(null),
+});
+
+export type RecipeImportResponse = z.infer<typeof recipeImportResponseSchema>;
 
 export type PlannedIngredient = z.infer<typeof plannedIngredientSchema>;
 export type PlannedMealAI = z.infer<typeof plannedMealSchema>;

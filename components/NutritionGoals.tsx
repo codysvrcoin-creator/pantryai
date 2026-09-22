@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 
-const PRESETS = [1500, 2000, 2500, 3000];
+const PRESETS = [1600, 1900, 2200, 2600];
 
 function MacroRow({
   label,

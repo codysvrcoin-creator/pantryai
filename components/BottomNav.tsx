@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Home, CalendarDays, Refrigerator, ShoppingCart, ChefHat } from "lucide-react";
+import { Home, BookOpen, CalendarDays, Refrigerator, ShoppingCart, ChefHat } from "lucide-react";
 
 const TABS = [
   { href: "/", label: "Home", icon: Home },
+  { href: "/recipes", label: "Recipes", icon: BookOpen },
   { href: "/week", label: "Week", icon: CalendarDays },
   { href: "/pantry", label: "Pantry", icon: Refrigerator },
   { href: "/shopping", label: "Shopping", icon: ShoppingCart },

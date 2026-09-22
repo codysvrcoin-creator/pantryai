@@ -6,13 +6,14 @@ import AppInit from "@/components/AppInit";
 import SyncManager from "@/components/SyncManager";
 
 export const metadata: Metadata = {
-  title: "PantryAI",
-  description: "Personal food assistant: budget, pantry, meal plan, and shopping.",
+  title: "MealFit",
+  description:
+    "Vegan, high-protein, calorie-conscious meal system: import recipes, auto-generate your weekly plan and grocery list, and get real days off from cooking.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "PantryAI",
+    title: "MealFit",
   },
   icons: {
     apple: "/icons/apple-touch-icon.png",

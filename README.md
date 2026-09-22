@@ -1,24 +1,36 @@
-# 🥗 PantryAI
+# 🥦 MealFit
 
-Personal food assistant (PWA) to install on your iPhone home screen:
-budget → pantry → AI weekly menu → shopping list → cook → consume. Built for
-**strictly personal** use (a single person/household, no login, no social
-features, no payments).
+A **system, not a diet**: vegan, high-protein, calorie-conscious meals for
+people who train and love food. Install it on your iPhone home screen:
+budget → saved recipes → AI weekly menu (meal-prepped for real days off) →
+shopping list → cook → consume. Built for **strictly personal** use (a
+single person/household, no login, no social features, no payments).
 
 ## Features
 
+- **Fixed nutritional identity**: every generated recipe is 100% vegan,
+  high-protein, and calorie-conscious — tasty, culinary, social-media-worthy
+  food, not diet food. It's the app's system, not a per-user setting.
+- **Meal-prep "days off"**: pick how many days a week you actually want to
+  cook (default 4/7). The AI batches recipes on cook days and reuses them as
+  labeled leftovers on the rest, so you get real days with zero cooking.
+- **Import your saved recipes**: paste a caption or text from Instagram,
+  TikTok, Pinterest, or anywhere else. MealFit structures it, adapts it to
+  the vegan/high-protein system if needed, and saves it to your collection —
+  it doesn't just store it, it reuses it when building your week.
 - **Local-first**: works offline (Zustand + `localStorage`); syncs with
   Supabase in the background whenever there's internet.
 - **AI-powered weekly planner** (Gemini): generates a full menu that respects
-  your budget, nutrition goals, current pantry, and preferences expressed in
-  natural language. The arithmetic (calories, macros, prices, quantities) is
-  always computed by the app, never by the AI.
+  your budget, nutrition goals, current pantry, saved recipes, and
+  preferences expressed in natural language. The arithmetic (calories,
+  macros, prices, quantities) is always computed by the app, never by the AI.
 - **Pantry** with fridge / pantry / freezer, manual entry, by dictation
   (several products at once), or by receipt photo (OCR with Gemini Vision).
 - **Personal price memory**: remembers the last real price paid for each
   product and uses it to estimate the cost of your next shop.
-- **Smart shopping list**: compares what you need with what you already
-  have, rounds up to real package sizes, and prioritizes real prices over
+- **Smart shopping list**: auto-generated from the week's plan (including
+  imported recipes), compares what you need with what you already have,
+  rounds up to real package sizes, and prioritizes real prices over
   estimates.
 - **Cook Mode**: large steps, timers, and a button to adjust the recipe on
   the fly with AI. When you finish, it automatically deducts the ingredients
@@ -56,6 +68,7 @@ npm install
    1. `supabase/schema.sql`
    2. `supabase/schema_part3.sql`
    3. `supabase/schema_part4.sql`
+   4. `supabase/schema_part5_mealfit.sql`
 3. Go to **Project Settings → API** and copy:
    - `Project URL` → this will be your `NEXT_PUBLIC_SUPABASE_URL`
    - `anon public key` → this will be your `NEXT_PUBLIC_SUPABASE_ANON_KEY`

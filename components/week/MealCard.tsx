@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Flame, Clock, Euro } from "lucide-react";
+import { Flame, Clock, Euro, Repeat2 } from "lucide-react";
 import type { PlannedMeal } from "@/lib/types";
 
 const MEAL_TYPE_LABEL: Record<string, string> = {
@@ -45,6 +45,13 @@ export default function MealCard({
       <p className="text-base font-semibold leading-tight text-foreground">
         {meal.recipeName}
       </p>
+
+      {meal.isLeftover && (
+        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+          <Repeat2 size={11} />
+          Meal-prepped · just reheat
+        </span>
+      )}
 
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">

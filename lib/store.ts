@@ -12,12 +12,20 @@ import type {
   GroceryItem,
   ScannedReceiptItem,
   PriceMemoryEntry,
+  Recipe,
 } from "@/lib/types";
 import { generateGroceryList } from "@/lib/groceryDiff";
 import { estimatePrice, computePricePerBaseUnit, resolvePriceForPurchase, toBaseUnit } from "@/lib/priceEstimates";
 import { normalizeProductName, isSameProduct } from "@/lib/productName";
 import { deductIngredientsFromPantry, type DeductionResult } from "@/lib/pantryDeduction";
-import { syncFullState, syncReceipt, syncPriceMemoryEntry, syncPantryItems } from "@/lib/supabase/sync";
+import {
+  syncFullState,
+  syncReceipt,
+  syncPriceMemoryEntry,
+  syncPantryItems,
+  syncSavedRecipe,
+  deleteSavedRecipeRemote,
+} from "@/lib/supabase/sync";
 
 // -----------------------------------------------------------------------
 // Utility: tries to sync with Supabase but NEVER blocks the UI.
@@ -55,6 +63,34 @@ interface AppState {
     carbsG: number;
     fatG: number;
   }>) => void;
+
+  // ---------- Meal-prep system: cook days vs. days off ----------
+  cookDaysPerWeek: number;
+  setCookDaysPerWeek: (days: number) => void;
+
+  // ---------- Saved / imported recipes ----------
+  savedRecipes: Recipe[];
+  addSavedRecipe: (recipe: {
+    name: string;
+    servings_base: number;
+    instructions: string | null;
+    prep_minutes: number;
+    cook_minutes: number;
+    tags: string[];
+    calories_per_serving: number | null;
+    protein_per_serving: number | null;
+    carbs_per_serving: number | null;
+    fat_per_serving: number | null;
+    estimated_cost: number | null;
+    source: "manual" | "import";
+    source_url: string | null;
+    steps: { text: string; timerMinutes: number | null }[];
+    utensils: string[];
+    was_adapted: boolean;
+    adaptation_note: string | null;
+    ingredients: { name: string; quantity: number; unit: string; pantry_category: string; optional: boolean }[];
+  }) => void;
+  removeSavedRecipe: (id: string) => void;
 
   // ---------- Pantry (offline-first) ----------
   pantryItems: PantryItem[];
@@ -157,11 +193,11 @@ export const useAppStore = create<AppState>()(
         });
       },
 
-      // ---------- Nutrition goals ----------
-      calories: 2000,
-      proteinG: 120,
-      carbsG: 220,
-      fatG: 65,
+      // ---------- Nutrition goals (MealFit's default: vegan, high-protein, calorie-conscious) ----------
+      calories: 1900,
+      proteinG: 150,
+      carbsG: 190,
+      fatG: 58,
       setNutritionGoals: (goals) => {
         set((state) => ({
           calories: goals.calories ?? state.calories,
@@ -181,6 +217,47 @@ export const useAppStore = create<AppState>()(
             })
             .neq("id", "");
         });
+      },
+
+      // ---------- Meal-prep system: cook days vs. days off ----------
+      cookDaysPerWeek: 4,
+      setCookDaysPerWeek: (days) => {
+        const clamped = Math.max(1, Math.min(7, Math.round(days)));
+        set({ cookDaysPerWeek: clamped });
+        trySync(async () => {
+          await supabase
+            .from("preferences")
+            .update({ cook_days_per_week: clamped })
+            .neq("id", "");
+        });
+      },
+
+      // ---------- Saved / imported recipes ----------
+      savedRecipes: [],
+      addSavedRecipe: (recipe) => {
+        const recipeId = uid();
+        const newRecipe: Recipe = {
+          ...recipe,
+          id: recipeId,
+          created_at: new Date().toISOString(),
+          ingredients: recipe.ingredients.map((ing) => ({
+            id: uid(),
+            recipe_id: recipeId,
+            name: ing.name,
+            quantity: ing.quantity,
+            unit: ing.unit,
+            pantry_category: ing.pantry_category,
+            optional: ing.optional,
+          })),
+        };
+        set((state) => ({ savedRecipes: [newRecipe, ...state.savedRecipes] }));
+        trySync(() => syncSavedRecipe(newRecipe));
+      },
+      removeSavedRecipe: (id) => {
+        set((state) => ({
+          savedRecipes: state.savedRecipes.filter((r) => r.id !== id),
+        }));
+        trySync(() => deleteSavedRecipeRemote(id));
       },
 
       // ---------- Pantry ----------
@@ -674,6 +751,7 @@ export const useAppStore = create<AppState>()(
             people: state.people,
             weeklyBudget: state.weeklyBudget,
             currency: state.currency,
+            cookDaysPerWeek: state.cookDaysPerWeek,
             calories: state.calories,
             proteinG: state.proteinG,
             carbsG: state.carbsG,
@@ -690,11 +768,12 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: "pantryai-storage",
+      name: "mealfit-storage",
       partialize: (state) => ({
         people: state.people,
         weeklyBudget: state.weeklyBudget,
         currency: state.currency,
+        cookDaysPerWeek: state.cookDaysPerWeek,
         calories: state.calories,
         proteinG: state.proteinG,
         carbsG: state.carbsG,
@@ -703,6 +782,7 @@ export const useAppStore = create<AppState>()(
         weekPlan: state.weekPlan,
         groceryItems: state.groceryItems,
         priceMemory: state.priceMemory,
+        savedRecipes: state.savedRecipes,
       }),
     }
   )

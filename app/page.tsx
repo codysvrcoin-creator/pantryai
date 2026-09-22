@@ -2,12 +2,13 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Users, Wallet, Flame, Beef, Refrigerator, ShoppingCart } from "lucide-react";
+import { Users, Wallet, Flame, Beef, Refrigerator, ShoppingCart, ChefHat } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { formatMoney } from "@/lib/format";
 import BudgetSelector from "@/components/BudgetSelector";
 import PeopleSelector from "@/components/PeopleSelector";
 import NutritionGoals from "@/components/NutritionGoals";
+import CookDaysSelector from "@/components/CookDaysSelector";
 
 function StatCard({
   icon: Icon,
@@ -47,6 +48,7 @@ export default function DashboardPage() {
   const currency = useAppStore((s) => s.currency);
   const calories = useAppStore((s) => s.calories);
   const proteinG = useAppStore((s) => s.proteinG);
+  const cookDaysPerWeek = useAppStore((s) => s.cookDaysPerWeek);
   const pantryItems = useAppStore((s) => s.pantryItems);
   const groceryItems = useAppStore((s) => s.groceryItems);
 
@@ -67,12 +69,17 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6 px-4 pt-4">
       <header>
         <p className="text-sm text-muted-foreground">Hi 👋</p>
-        <h1 className="text-2xl font-semibold text-foreground">Week overview</h1>
+        <h1 className="text-2xl font-semibold text-foreground">MealFit</h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          A system, not a diet — vegan, high-protein, calorie-conscious meals, meal-prepped so you
+          get real days off from cooking.
+        </p>
       </header>
 
       <section className="flex flex-col gap-3">
         <BudgetSelector />
         <PeopleSelector />
+        <CookDaysSelector />
         <NutritionGoals />
       </section>
 
@@ -88,6 +95,13 @@ export default function DashboardPage() {
           />
           <StatCard icon={Flame} label="Calorie target" value={`${calories} kcal`} accent="#C85C7A" />
           <StatCard icon={Beef} label="Protein target" value={`${proteinG}g`} accent="#4E9C74" />
+          <StatCard
+            icon={ChefHat}
+            label="Cook days"
+            value={String(cookDaysPerWeek)}
+            sub={`${7 - cookDaysPerWeek} day(s) off`}
+            accent="#8E7CC3"
+          />
           <StatCard
             icon={Refrigerator}
             label="In the pantry"

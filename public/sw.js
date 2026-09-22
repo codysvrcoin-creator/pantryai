@@ -1,6 +1,7 @@
-const CACHE_NAME = "pantryai-v1";
+const CACHE_NAME = "mealfit-v2";
 const APP_SHELL = [
   "/",
+  "/recipes",
   "/pantry",
   "/week",
   "/shopping",

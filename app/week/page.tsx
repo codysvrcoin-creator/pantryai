@@ -21,6 +21,8 @@ export default function WeekPage() {
   const carbsG = useAppStore((s) => s.carbsG);
   const fatG = useAppStore((s) => s.fatG);
   const pantryItems = useAppStore((s) => s.pantryItems);
+  const cookDaysPerWeek = useAppStore((s) => s.cookDaysPerWeek);
+  const savedRecipes = useAppStore((s) => s.savedRecipes);
   const isGeneratingPlan = useAppStore((s) => s.isGeneratingPlan);
   const setPlanGenerating = useAppStore((s) => s.setPlanGenerating);
   const planError = useAppStore((s) => s.planError);
@@ -75,6 +77,20 @@ export default function WeekPage() {
             unit: p.unit,
             location: p.location,
             expiration_date: p.expiration_date,
+          })),
+          cookDaysPerWeek,
+          savedRecipes: savedRecipes.map((r) => ({
+            name: r.name,
+            tags: r.tags,
+            prepMinutes: r.prep_minutes,
+            cookMinutes: r.cook_minutes,
+            caloriesPerServing: r.calories_per_serving,
+            proteinPerServing: r.protein_per_serving,
+            ingredients: (r.ingredients ?? []).map((i) => ({
+              name: i.name,
+              quantity: i.quantity,
+              unit: i.unit,
+            })),
           })),
         }),
       });

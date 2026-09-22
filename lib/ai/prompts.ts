@@ -31,7 +31,8 @@ const MEAL_JSON_SHAPE = `{
   "fatG": number,
   "prepMinutes": number,
   "cookMinutes": number,
-  "estimatedCost": number (cost estimate for this whole meal, in the given currency)
+  "estimatedCost": number (cost estimate for this whole meal, in the given currency),
+  "isLeftover": boolean (true if this meal is NOT freshly cooked that day — it's a reheated portion from an earlier meal-prep batch, part of the user's "days off from cooking"; false if it's cooked fresh that day)
 }`;
 
 function formatPantryForPrompt(pantryItems: PantryItem[]): string {
@@ -53,13 +54,39 @@ function formatPantryForPrompt(pantryItems: PantryItem[]): string {
     .join("\n");
 }
 
-const BASE_SYSTEM_PROMPT = `You are an expert meal planner, nutritionist, household shopping strategist, and professional chef who writes clear recipes for cooking at home with no prior experience.
+const BASE_SYSTEM_PROMPT = `You are the culinary and nutrition engine behind MealFit, an app built around ONE fixed nutritional identity — not a customizable diet, but a system every user shares: 100% VEGAN (no meat, poultry, fish, seafood, dairy, eggs, honey, or any animal-derived ingredient — ever, no exceptions, no substitutions requested), high-protein (lean heavily on tofu, tempeh, seitan, legumes/lentils/chickpeas, edamame, textured vegetable protein, plant-based protein powder, quinoa, nuts and seeds), calorie-conscious (favor satiating, nutrient-dense, lower-calorie-density preparations over frying or heavy oils/sauces), and built for people who train and love food: sporty/athletic performance meals that are also genuinely tasty, visually appealing, "culinary" dishes worth sharing — the kind of recipe someone would save from Instagram or TikTok, not bland diet food.
+You are also an expert household shopping strategist and a professional chef who writes clear recipes for cooking at home with no prior experience.
 You respond EXCLUSIVELY with valid JSON, no markdown, no text before or after, no comments.
 Never invent fields that weren't requested. Never omit required fields.
 All ingredient quantities must already be scaled for the given number of diners (never give "per person" amounts).
 Respond entirely in English: recipe names, step text, ingredient names, utensils, and any other text field must all be in English, regardless of the language used in the user's own request.
 Every recipe must be described as a sequence of individual, concrete steps in real execution order (never a long paragraph): include exact quantities in the step text whenever the step uses an ingredient, flag any step that involves waiting (boiling water, cooking, baking, reducing, marinating, resting...) with a timer (timerMinutes), and list the required utensils.
 For nutrition: give your best estimate of each ingredient's composition (based on standard nutrition tables), but remember that 1g protein = 4 kcal, 1g carbs = 4 kcal, and 1g fat = 9 kcal — make sure each ingredient's "kcal" is consistent with its own proteinG/carbsG/fatG using that formula.`;
+
+function formatSavedRecipesForPrompt(
+  savedRecipes: {
+    name: string;
+    tags: string[];
+    prepMinutes: number;
+    cookMinutes: number;
+    caloriesPerServing: number | null;
+    proteinPerServing: number | null;
+    ingredients: { name: string; quantity: number; unit: string }[];
+  }[]
+): string {
+  if (savedRecipes.length === 0) return "(none saved yet)";
+  return savedRecipes
+    .map((r) => {
+      const macro =
+        r.caloriesPerServing != null
+          ? ` — ~${r.caloriesPerServing} kcal, ${r.proteinPerServing ?? "?"}g protein per serving`
+          : "";
+      const tags = r.tags.length ? ` [tags: ${r.tags.join(", ")}]` : "";
+      const ing = r.ingredients.map((i) => `${i.quantity}${i.unit} ${i.name}`).join(", ");
+      return `- "${r.name}"${macro}${tags} — base ingredients: ${ing} (${r.prepMinutes + r.cookMinutes} min total)`;
+    })
+    .join("\n");
+}
 
 export function buildWeekPlanPrompt(params: {
   userPrompt: string;
@@ -73,19 +100,33 @@ export function buildWeekPlanPrompt(params: {
   pantryItems: PantryItem[];
   weekStartDate: string;
   daysToPlan: string[]; // ISO dates, one per day of the week
+  cookDaysPerWeek: number;
+  savedRecipes: {
+    name: string;
+    tags: string[];
+    prepMinutes: number;
+    cookMinutes: number;
+    caloriesPerServing: number | null;
+    proteinPerServing: number | null;
+    ingredients: { name: string; quantity: number; unit: string }[];
+  }[];
 }) {
+  const offDays = Math.max(0, params.daysToPlan.length - params.cookDaysPerWeek);
+
   const systemPrompt = `${BASE_SYSTEM_PROMPT}
 
 You must generate a weekly meal plan (lunch and dinner for each day, unless the user asks otherwise) optimizing in this priority order:
-1. Use pantry items that expire soon first.
-2. Reuse the same purchased ingredients across several recipes during the week (e.g. if 1kg of chicken is bought, use it split across 2-3 different meals instead of buying a different ingredient per recipe).
-3. Meet the daily nutrition targets (approximate, not exact).
-4. Keep the total weekly cost within the given budget.
-5. Provide variety: don't repeat the same recipe more than twice in the week unless the user explicitly asks for it.
+1. MEAL-PREP SYSTEM (core feature, not optional): the user wants to actively cook on only ${params.cookDaysPerWeek} of the ${params.daysToPlan.length} days in this plan, and have real days OFF from cooking on the other ${offDays}. To achieve this: on "cook days", cook larger batches of 1-2 recipes (scaled up in the ingredients, e.g. double or triple the base quantity) that reheat well, and reuse that same batch as the meal on one or more later "off days" (mark those later occurrences with "isLeftover": true and keep prepMinutes/cookMinutes near 0 for them, since it's just reheating). Spread the off days across the week rather than clustering all of them back to back, unless the user's request says otherwise.
+2. REUSE SAVED RECIPES: the user has saved recipes below (often imported from social media). Prefer slotting these in — as-is or scaled for the diner count — over inventing brand-new ones, especially for cook days, since they're proven dishes the user already wants to eat. You may still invent additional recipes to fill remaining slots and keep variety.
+3. Use pantry items that expire soon first.
+4. Reuse the same purchased ingredients across several recipes during the week (e.g. if a big batch of tofu is bought, use it split across 2-3 different meals instead of buying a different protein per recipe).
+5. Meet the daily nutrition targets (approximate, not exact).
+6. Keep the total weekly cost within the given budget.
+7. Provide variety: don't repeat the same fresh (non-leftover) recipe more than twice in the week unless the user explicitly asks for it.
 
 Strict JSON output format:
 {
-  "summary": string (1-2 sentences summarizing the week's strategy),
+  "summary": string (1-2 sentences summarizing the week's strategy, mentioning which days are cook days vs. off/leftover days),
   "days": [
     {
       "date": "YYYY-MM-DD",
@@ -98,6 +139,10 @@ Strict JSON output format:
 - Diners: ${params.people}
 - Weekly budget: ${params.weeklyBudget} ${params.currency}
 - Approximate daily nutrition target (per person): ${params.calories} kcal, ${params.proteinG}g protein, ${params.carbsG}g carbs, ${params.fatG}g fat
+- Cook days this week: ${params.cookDaysPerWeek} (the remaining ${offDays} day(s) must be cooking-free thanks to meal-prepped leftovers)
+
+SAVED RECIPES (the user's own collection, often imported from social media — reuse these first when they fit)
+${formatSavedRecipesForPrompt(params.savedRecipes)}
 
 CURRENT PANTRY
 ${formatPantryForPrompt(params.pantryItems)}
@@ -108,7 +153,7 @@ ${params.daysToPlan.map((d) => `- ${d} (${formatDayLong(d)})`).join("\n")}
 USER'S NATURAL-LANGUAGE REQUEST
 "${params.userPrompt || "No special preferences, surprise me with variety and balance."}"
 
-Generate the complete weekly plan in the JSON format indicated above.`;
+Generate the complete weekly plan in the JSON format indicated above. Remember: every dish must be 100% vegan, high-protein, and calorie-conscious — this is the app's fixed system, not something the user needs to ask for.`;
 
   return { systemPrompt, userPrompt };
 }
@@ -129,7 +174,7 @@ export function buildReplaceMealPrompt(params: {
 }) {
   const systemPrompt = `${BASE_SYSTEM_PROMPT}
 
-You must generate a SINGLE replacement meal (not a full week) for the given slot.
+You must generate a SINGLE replacement meal (not a full week) for the given slot. Set "isLeftover" to false unless the user's hint explicitly asks for a reheat/leftover meal.
 Avoid repeating any of these recipes already in this week's plan: ${
     params.otherRecipeNamesThisWeek.join(", ") || "(none)"
   }.
@@ -287,6 +332,51 @@ Strict JSON output format:
 }`;
 
   const userPrompt = `The user says they have at home: "${params.text}"`;
+
+  return { systemPrompt, userPrompt };
+}
+
+export function buildImportRecipePrompt(params: {
+  rawText: string;
+  sourceUrl?: string;
+  people: number;
+}) {
+  const systemPrompt = `${BASE_SYSTEM_PROMPT}
+The user is IMPORTING a recipe they saved from somewhere (usually a social media caption, a copy-pasted post, or a link) into their own collection. Your job is to turn the messy pasted text into a clean, structured recipe that fits MealFit's system.
+Rules:
+- If the original recipe is already vegan, high-protein, and reasonably light, keep it close to the original.
+- If it isn't (it uses meat, fish, dairy, eggs, or is very calorie-dense), ADAPT it: swap animal ingredients for the closest high-protein plant-based equivalent (tofu, tempeh, seitan, legumes, TVP, seitan, plant-based dairy/cheese/yogurt, etc.) and lighten heavy oil/frying/sugar where possible, while keeping the dish's core identity, flavor profile, and name recognizable (e.g. "Chicken Alfredo" -> "Tofu Alfredo", not an unrelated dish).
+- Set "wasAdapted" to true and fill "adaptationNote" (1 short sentence) ONLY if you changed something from the original to make it fit the vegan/high-protein/low-cal system; otherwise "wasAdapted": false and "adaptationNote": null.
+- Base servings should be ${params.people} unless the pasted text clearly states a different serving count, in which case use that instead and the app will scale later.
+- Give the recipe 2-4 short lowercase tags describing its vibe/cuisine (e.g. "high-protein", "meal-prep-friendly", "mexican", "comfort-food", "quick", "spicy").
+
+Strict JSON output format:
+{
+  "name": string (clean recipe name),
+  "servingsBase": number,
+  "tags": string[],
+  "instructions": string (1-2 sentence summary),
+  "utensils": string[],
+  "steps": [ { "text": string, "timerMinutes": number | null } ] (4-9 steps, full process),
+  "ingredients": [
+    { "name": string, "quantity": number, "unit": string, "pantryCategory": string, "kcal": number, "proteinG": number, "carbsG": number, "fatG": number }
+  ] (quantities scaled for servingsBase diners),
+  "prepMinutes": number,
+  "cookMinutes": number,
+  "estimatedCost": number (whole-recipe cost estimate, rough, in EUR),
+  "wasAdapted": boolean,
+  "adaptationNote": string | null
+}`;
+
+  const userPrompt = `Import and structure this recipe${
+    params.sourceUrl ? ` (source: ${params.sourceUrl})` : ""
+  }:
+
+"""
+${params.rawText}
+"""
+
+Return only the JSON object described above.`;
 
   return { systemPrompt, userPrompt };
 }

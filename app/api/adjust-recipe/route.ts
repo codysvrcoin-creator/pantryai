@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
       prepMinutes: aiResult.prepMinutes,
       cookMinutes: aiResult.cookMinutes,
       estimatedCost: aiResult.estimatedCost,
+      isLeftover: aiResult.isLeftover,
     };
 
     return NextResponse.json({ meal });

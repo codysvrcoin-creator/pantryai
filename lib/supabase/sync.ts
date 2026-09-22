@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
-import type { PantryItem, WeekPlan, GroceryItem, PriceMemoryEntry } from "@/lib/types";
+import type { PantryItem, WeekPlan, GroceryItem, PriceMemoryEntry, Recipe } from "@/lib/types";
 
 // -----------------------------------------------------------------------
 // Local -> Supabase sync (background backup).
@@ -32,6 +32,7 @@ export async function syncPreferences(prefs: {
   people: number;
   weeklyBudget: number;
   currency: string;
+  cookDaysPerWeek: number;
 }) {
   return safe("preferences", async () => {
     const { error } = await supabase
@@ -40,9 +41,72 @@ export async function syncPreferences(prefs: {
         people: prefs.people,
         weekly_budget: prefs.weeklyBudget,
         currency: prefs.currency,
+        cook_days_per_week: prefs.cookDaysPerWeek,
         updated_at: new Date().toISOString(),
       })
       .neq("id", "");
+    if (error) throw error;
+  });
+}
+
+/**
+ * Saves an imported/saved recipe (see app/api/import-recipe) as a proper
+ * relational row: one `recipes` row plus its `recipe_ingredients` rows.
+ * Steps/utensils/adaptation metadata live in dedicated jsonb/text columns
+ * added by supabase/schema_part5_mealfit.sql.
+ */
+export async function syncSavedRecipe(recipe: Recipe) {
+  return safe("recipes", async () => {
+    const { error } = await supabase.from("recipes").upsert(
+      {
+        id: recipe.id,
+        name: recipe.name,
+        servings_base: recipe.servings_base,
+        instructions: recipe.instructions,
+        prep_minutes: recipe.prep_minutes,
+        cook_minutes: recipe.cook_minutes,
+        tags: recipe.tags,
+        calories_per_serving: recipe.calories_per_serving,
+        protein_per_serving: recipe.protein_per_serving,
+        carbs_per_serving: recipe.carbs_per_serving,
+        fat_per_serving: recipe.fat_per_serving,
+        estimated_cost: recipe.estimated_cost,
+        source: recipe.source,
+        source_url: recipe.source_url,
+        steps: recipe.steps,
+        utensils: recipe.utensils,
+        was_adapted: recipe.was_adapted,
+        adaptation_note: recipe.adaptation_note,
+      },
+      { onConflict: "id" }
+    );
+    if (error) throw error;
+
+    if (recipe.ingredients && recipe.ingredients.length > 0) {
+      const { error: delErr } = await supabase
+        .from("recipe_ingredients")
+        .delete()
+        .eq("recipe_id", recipe.id);
+      if (delErr) throw delErr;
+
+      const { error: insErr } = await supabase.from("recipe_ingredients").insert(
+        recipe.ingredients.map((ing) => ({
+          recipe_id: recipe.id,
+          name: ing.name,
+          quantity: ing.quantity,
+          unit: ing.unit,
+          pantry_category: ing.pantry_category,
+          optional: ing.optional,
+        }))
+      );
+      if (insErr) throw insErr;
+    }
+  });
+}
+
+export async function deleteSavedRecipeRemote(id: string) {
+  return safe("recipes-delete", async () => {
+    const { error } = await supabase.from("recipes").delete().eq("id", id);
     if (error) throw error;
   });
 }
@@ -187,6 +251,7 @@ export async function syncFullState(state: {
   people: number;
   weeklyBudget: number;
   currency: string;
+  cookDaysPerWeek: number;
   calories: number;
   proteinG: number;
   carbsG: number;
@@ -201,6 +266,7 @@ export async function syncFullState(state: {
       people: state.people,
       weeklyBudget: state.weeklyBudget,
       currency: state.currency,
+      cookDaysPerWeek: state.cookDaysPerWeek,
     }),
     syncNutritionGoals({
       calories: state.calories,
